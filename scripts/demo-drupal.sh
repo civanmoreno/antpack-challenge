@@ -1,16 +1,17 @@
 #!/usr/bin/env bash
 # Starts a throwaway Drupal 11 with a generated component mounted, so it can be checked in a browser.
 set -euo pipefail
+source "$(dirname "$0")/lib/common.sh"
 
 NAME="${1:?Uso: scripts/demo-drupal.sh <nombre> [carpeta_base]}"
 BASE_DIR="${2:-web/modules/custom}"
 PORT="${DEMO_PORT:-8080}"
 IMAGE="${DRUPAL_IMAGE:-drupal:11-php8.3}"
 CONTAINER="scaffold-demo"
-MODULE_DIR="$(cd "$BASE_DIR/$NAME" 2>/dev/null && pwd)" || {
-  echo "✖ No existe $BASE_DIR/$NAME. Genéralo primero: make component name=$NAME" >&2
-  exit 1
-}
+MODULE_DIR="$(cd "$BASE_DIR/$NAME" 2>/dev/null && pwd)" \
+  || fail "No existe $BASE_DIR/$NAME. Genéralo primero: make component name=$NAME"
+
+require_docker
 
 docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
 docker run -d --name "$CONTAINER" -p "$PORT:80" \

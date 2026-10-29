@@ -25,7 +25,7 @@ format: ## Formatea el código con Prettier
 check: ## Formato + lint + tests (lo mismo que corre CI)
 	npm run check
 
-smoke: ## Prueba el componente generado en un Drupal 11 real (requiere Docker)
+smoke: ## Valida un componente generado en Drupal 11 (Docker). KEEP=1 deja el contenedor vivo
 	./scripts/smoke-drupal.sh
 
 demo: ## Levanta Drupal en localhost:8080 con tu componente: make demo name=<nombre> (requiere Docker)
