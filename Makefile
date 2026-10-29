@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help install component test lint format check
+.PHONY: help install component test lint format check smoke
 
 dir ?= web/modules/custom
 
@@ -24,3 +24,6 @@ format: ## Formatea el código con Prettier
 
 check: ## Formato + lint + tests (lo mismo que corre CI)
 	npm run check
+
+smoke: ## Prueba el componente generado en un Drupal 11 real (requiere Docker)
+	./scripts/smoke-drupal.sh
