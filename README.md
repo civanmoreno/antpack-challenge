@@ -1,10 +1,9 @@
-# Reto técnico: scaffolding, gobernanza de configuración y liderazgo (Drupal)
+# Reto técnico: scaffolding y gobernanza de configuración (Drupal)
 
-Respuesta a los tres bloques del reto:
+Respuesta a los bloques técnicos del reto:
 
 1. [Automatización de scaffolding](#bloque-1--automatización-ligera-de-scaffolding): código funcional, con tests, validado con `phpcs` (estándares Drupal) y probado en un Drupal 11 real.
 2. [Estrategia de calidad y ciclo de configuración](#bloque-2--estrategia-de-calidad-y-ciclo-de-configuración).
-3. [Liderazgo situacional](#bloque-3--liderazgo-situacional-y-gestión-de-fricciones).
 
 ---
 
@@ -265,38 +264,6 @@ El criterio: **pocos checks, rápidos, en paralelo y bloqueantes**. Un check len
 - Caché de `vendor/` y `node_modules`, `concurrency` que cancela ejecuciones obsoletas y jobs en paralelo. Objetivo: **< 10 minutos** de feedback.
 - **Fuera del gate de PR** (nightly o pre-release): E2E con Playwright, regresión visual, Lighthouse/accesibilidad y tests funcionales completos. Son valiosos, pero demasiado lentos o inestables para bloquear cada merge.
 - Para linters en código legado: aplicar solo a archivos nuevos o modificados (o con un _baseline_ de PHPStan) y subir el nivel de forma gradual, para no bloquear al equipo con miles de errores históricos el primer día.
-
----
-
-## Bloque 3 · Liderazgo situacional y gestión de fricciones
-
-### Escenario A: "hacerlo a mano es más rápido"
-
-Lo trato como un problema de **datos y de diseño de la herramienta**, no de obediencia.
-
-1. **En privado y con curiosidad, no en el daily ni en el review del PR.** "¿Qué parte te frena exactamente?" A veces tiene razón: el linter es lento, hay reglas ruidosas o el generador no cubre su caso. Si es así, el problema es mío y lo corrijo.
-2. **Separo lo negociable de lo que no.** Cómo trabaja en local es suyo. Lo que llega a `main` tiene que pasar los checks; no es una preferencia personal mía, es el acuerdo del equipo, y el CI lo aplica igual para todos (incluido yo).
-3. **Hablo de su beneficio, no del mío.** El generador tarda 1 segundo contra unos minutos a mano, y elimina justo los errores (nombres inconsistentes, librería mal declarada) que luego cuestan un ciclo de review o un bug en stage. Los linters en pre-commit le avisan en segundos de lo que el reviewer le diría al día siguiente.
-4. **Le doy la palanca.** Le propongo que mejore la herramienta: que el pre-commit solo revise los archivos modificados, una regla que le sobra, un flag nuevo en el generador. Quien la mejora deja de verla como impuesta, y su crítica se convierte en una mejora para todos.
-5. **Medimos y revisamos.** Acordamos probarlo 2 semanas y comparar tiempo de PR y comentarios de review. Si después de eso sigue saltándose el proceso, la conversación pasa a ser de expectativas del rol, de forma directa y en privado. Pero casi nunca se llega ahí si los pasos anteriores se hicieron bien.
-
-### Escenario B: cambio directo en la BD de producción 15 minutos antes del lanzamiento
-
-**Postura técnica:** no modifico la BD de producción a mano, y tampoco me limito a decir "no": mi trabajo es que la campaña salga **a tiempo y de forma segura**. Un `UPDATE` manual en prod sin backup ni revisión puede romper el sitio justo cuando más tráfico va a tener, y el próximo `drush deploy` lo deshará en silencio (Bloque 2). El riesgo de la "solución rápida" es mayor que el del retraso.
-
-**Primeros 3 minutos: triage.**
-
-- ¿La prueba rota está relacionada con el cambio de la campaña o es un test inestable o preexistente? (¿falla también en `main`?)
-- ¿Qué necesita exactamente la campaña: código, configuración o solo contenido?
-
-**Alternativas, de la más a la menos preferible:**
-
-1. **Si es contenido** (banner, landing, precio, fecha): se hace por la **UI administrativa de producción**, que es el canal legítimo para el contenido y deja revisiones y rollback. No requiere pipeline. Suele resolver la mayoría de estos casos.
-2. **Si la prueba es inestable o no está relacionada:** re-ejecutar el job. Si vuelve a fallar, aplicar el **procedimiento de excepción acordado**: dos aprobadores (tech lead + PM) marcan ese test como `skip` en un commit visible, con un ticket enlazado. El pipeline sigue corriendo todo lo demás (lint, config, el resto de tests), y el test se reactiva en menos de 24 h. Es un bypass auditable, no uno silencioso.
-3. **Si la prueba detecta un fallo real:** corregir hacia adelante (fix + pipeline) o, si no da tiempo, **lanzar sin esa pieza** y que la campaña use un feature flag o la versión anterior del componente. Un retraso de 30–60 minutos es recuperable; un sitio caído en la apertura de la campaña no lo es.
-4. **Último recurso, si el negocio asume el riesgo por escrito:** cambio en producción como _break-glass_: backup previo (`drush sql:dump`), script SQL o `drush` revisado por una segunda persona, ejecutado por quien tenga acceso y con plan de rollback. Después, en la misma jornada, el cambio se lleva a código y config para que el siguiente deploy no lo revierta.
-
-**Después:** postmortem sin culpables (¿por qué un test roto llegó a 15 minutos del lanzamiento?) con acciones concretas: congelar código y hacer un despliegue de prueba 24–48 h antes de las campañas críticas, tests inestables en cuarentena y no bloqueando, y el procedimiento de excepción documentado **antes** de la siguiente crisis, no improvisado durante ella.
 
 ---
 
