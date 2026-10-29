@@ -83,7 +83,7 @@ make check   # prettier + eslint + tests con umbral de cobertura del 90 %
 make smoke   # genera un componente, lo instala en Drupal 11 (Docker) y comprueba el HTML renderizado
 ```
 
-- 26 tests con `node:test` (validación, generador, CLI y proceso real) y 100 % de cobertura de líneas y ramas.
+- 26 tests con `node:test` (validación, generador, CLI y proceso real) con 100 % de cobertura de ramas y 99,7 % de líneas (umbral en CI: 90 %).
 - `make smoke` levanta `drupal:11-php8.3`, ejecuta `php -l`, `drush site:install`, `drush pm:install <componente>` y renderiza el theme hook comprobando el HTML. Pasa en local.
 - CI (`.github/workflows/ci.yml`) corre ambos en cada PR.
 - `npm install` activa un hook de pre-commit (`.githooks/pre-commit`) que corre `npm run check`. Es el mismo gate que CI, en unos 2 segundos.
@@ -103,7 +103,7 @@ scripts/smoke-drupal.sh
 examples/drupal-pr-pipeline.yml   # pipeline de referencia del Bloque 2
 ```
 
-**Decisión principal:** Node nativo en lugar de Plop/Yeoman. Plop daría prompts interactivos y plantillas Handlebars, pero añade una dependencia y otra sintaxis que el equipo tendría que mantener. Con template literals el generador cabe en ~300 líneas, se puede testear al 100 % y corre en cualquier máquina con Node. Si el catálogo de plantillas crece (variantes por tipo de componente, SDC, bloques), migrar a Plop es barato porque `templates.mjs` ya está aislado. Detalle en [ADR 0001](docs/adr/0001-native-node-scaffolder.md).
+**Decisión principal:** Node nativo en lugar de Plop/Yeoman. Plop daría prompts interactivos y plantillas Handlebars, pero añade una dependencia y otra sintaxis que el equipo tendría que mantener. Con template literals el generador cabe en ~300 líneas, se testea casi por completo y corre en cualquier máquina con Node. Si el catálogo de plantillas crece (variantes por tipo de componente, SDC, bloques), migrar a Plop es barato porque `templates.mjs` ya está aislado. Detalle en [ADR 0001](docs/adr/0001-native-node-scaffolder.md).
 
 ---
 

@@ -13,12 +13,12 @@ Script de Node.js con módulos nativos (`fs/promises`, `path`, `util.parseArgs`)
 
 ## Alternativas consideradas
 
-| Opción                | Pros                                                                | Contras                                                                           |
-| --------------------- | ------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| Node nativo (elegida) | Cero dependencias en runtime, testeable al 100 %, sin otra sintaxis | Sin prompts interactivos; las plantillas son código JS                            |
-| Plop.js               | Prompts, plantillas Handlebars, convención conocida                 | Dependencia y sintaxis extra; la validación robusta igual hay que escribirla      |
-| Bash + Makefile       | Disponible en cualquier servidor                                    | Validación y manejo de errores frágiles; difícil de testear; no corre en Windows  |
-| `drush generate`      | Oficial de Drupal, muchas plantillas                                | Requiere un sitio Drupal arrancado; no impone las convenciones propias del equipo |
+| Opción                | Pros                                                              | Contras                                                                           |
+| --------------------- | ----------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| Node nativo (elegida) | Cero dependencias en runtime, fácil de testear, sin otra sintaxis | Sin prompts interactivos; las plantillas son código JS                            |
+| Plop.js               | Prompts, plantillas Handlebars, convención conocida               | Dependencia y sintaxis extra; la validación robusta igual hay que escribirla      |
+| Bash + Makefile       | Disponible en cualquier servidor                                  | Validación y manejo de errores frágiles; difícil de testear; no corre en Windows  |
+| `drush generate`      | Oficial de Drupal, muchas plantillas                              | Requiere un sitio Drupal arrancado; no impone las convenciones propias del equipo |
 
 ## Consecuencias
 
