@@ -2,12 +2,12 @@
 
 Generador de línea de comandos que crea un componente Drupal completo (módulo, plantilla Twig, CSS, JS y librería) con un solo comando, con nombres consistentes y sin sobrescribir nunca código existente.
 
-> Este README explica **cómo usarlo**. El diseño, las decisiones y la estrategia de configuración y CI están en la [documentación del proyecto](docs/README.md).
+> Este README explica **qué hace la herramienta y cómo usarla** sobre tus componentes.
+> Para modificar la herramienta (su código, tests y CI), consulta [CONTRIBUTING.md](CONTRIBUTING.md). Para el diseño y las decisiones, la [documentación del proyecto](docs/README.md).
 
 ## Inicio rápido
 
 ```bash
-npm install                        # una sola vez: instala eslint/prettier y activa el hook de pre-commit
 make component name=hero_banner    # crea web/modules/custom/hero_banner con todos sus archivos
 make demo name=hero_banner         # opcional: lo ves funcionando en un Drupal real en http://localhost:8080
 make demo-stop                     # apaga la demo
@@ -15,14 +15,14 @@ make demo-stop                     # apaga la demo
 
 ## Requisitos
 
-| Herramienta  | Para qué                                        | Obligatoria                              |
-| ------------ | ----------------------------------------------- | ---------------------------------------- |
-| Node.js ≥ 20 | Ejecutar el generador y los tests               | Sí (`.nvmrc` fija la 24)                 |
-| `make`       | Atajos (`make component`, `make check`...)      | No: todo tiene equivalente con `npm run` |
-| Docker       | `make smoke` y `make demo` (Drupal 11 temporal) | Solo para validar en Drupal              |
-| `curl`       | `make demo` comprueba la página que levanta     | Solo para la demo                        |
+| Herramienta  | Para qué                                          | Obligatoria                           |
+| ------------ | ------------------------------------------------- | ------------------------------------- |
+| Node.js ≥ 20 | Ejecutar el generador (no necesita `npm install`) | Sí                                    |
+| `make`       | Atajos (`make component`, `make phpcs`...)        | No: `npm run scaffold` es equivalente |
+| Docker       | `make phpcs` y `make demo` (Drupal 11 temporal)   | Solo para revisar componentes         |
+| `curl`       | `make demo` comprueba la página que levanta       | Solo para la demo                     |
 
-Los scripts que usan Docker comprueban primero que esté instalado y que el servicio responda. Si no, se detienen con un mensaje que dice qué hacer.
+Los comandos que usan Docker comprueban primero que esté instalado y que el servicio responda. Si no, se detienen con un mensaje que dice qué hacer.
 
 ## Generar un componente
 
@@ -88,30 +88,11 @@ El generador aborta, sin crear nada, con un mensaje que explica qué hacer:
 
 Códigos de salida: `0` éxito, `1` error de uso, `2` error inesperado de E/S. Con `make`, después del mensaje aparece `make: *** [...] Error 1`: esa línea la añade `make` y es normal.
 
-## Validar que funciona
+## Revisar tus componentes
 
-Hay cuatro herramientas. Cada una comprueba algo que las anteriores no cubren.
+Estos comandos actúan sobre un componente que ya generaste en `web/modules/custom/<nombre>`. Lo montan en solo lectura, así que nunca modifican tus archivos.
 
-### a) Tests automáticos: `make check` (segundos, sin Docker)
-
-Corre Prettier, ESLint y 27 tests con `node:test`, con un umbral de cobertura del 90 % (la cobertura real es del 99,7 % de líneas y el 100 % de ramas). Los tests cubren la validación de nombres, el contenido de cada archivo, la protección contra sobrescritura, el rollback ante fallos de escritura y el CLI como proceso real. Es lo mismo que corren CI y el hook de pre-commit.
-
-### b) Smoke test en Drupal: `make smoke` (~20 s, Docker)
-
-Responde a la pregunta: ¿lo que genera la herramienta funciona en un Drupal real? Es automático y no interactivo, porque CI también lo ejecuta. Muestra cada paso:
-
-| Paso | Qué hace                                                                                                     |
-| ---- | ------------------------------------------------------------------------------------------------------------ |
-| 0    | Verifica que Node y Docker estén disponibles                                                                 |
-| 1    | Genera un componente de prueba (`smoke_component`) en una carpeta temporal                                   |
-| 2    | Arranca un contenedor `drupal:11-php8.3` (`scaffold-smoke-<pid>`) e instala Drush y `drupal/coder`           |
-| 3    | `php -l` y `phpcs --standard=Drupal,DrupalPractice` sobre el código generado, listando cada archivo revisado |
-| 4    | Instala un sitio Drupal (SQLite) y habilita el módulo                                                        |
-| 5    | Renderiza el componente y comprueba el HTML resultante                                                       |
-
-Al terminar, el contenedor y la carpeta temporal se borran. Si quieres inspeccionarlo, ejecuta `KEEP=1 make smoke`: el contenedor queda en marcha y el script te dice cómo entrar (`docker exec -it ... bash`) y cómo borrarlo.
-
-### c) Demo en el navegador: `make demo name=<nombre>` (1–2 min, Docker)
+### Verlo en el navegador: `make demo name=<nombre>` (1–2 min, Docker)
 
 Sirve para verlo con tus propios ojos, con **tu** componente: el que generaste en `web/modules/custom/<nombre>`.
 
@@ -133,9 +114,9 @@ Después, en el navegador:
 
 **Para apagarla:** `make demo-stop`. Borra el contenedor y todo lo que se creó dentro (el sitio, la base de datos y el módulo auxiliar). Tus archivos en `web/modules/custom` no se tocan. Si vuelves a ejecutar `make demo`, la demo anterior se reemplaza, así que nunca se acumulan contenedores.
 
-### d) Estándares Drupal en tus componentes: `make phpcs name=<nombre>` (Docker)
+### Estándares Drupal: `make phpcs name=<nombre>` (Docker)
 
-`make smoke` aplica `phpcs` solo a su componente temporal. Para revisar un componente tuyo, por ejemplo después de editarlo a mano:
+Comprueba que el componente cumple los estándares `Drupal` y `DrupalPractice`, por ejemplo después de editarlo a mano:
 
 ```bash
 make phpcs name=hero_banner
@@ -155,33 +136,26 @@ Ejecuta `phpcs --standard=Drupal,DrupalPractice` (de `drupal/coder`) sobre `web/
 
 ## Solución de problemas
 
-| Síntoma                                                              | Causa y solución                                                                                                                                                                                           |
-| -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `✖ docker no está instalado`                                         | Instala Docker: https://docs.docker.com/get-docker/                                                                                                                                                        |
-| `✖ Docker está instalado pero no responde`                           | El servicio está apagado o tu usuario no tiene permisos. Inicia Docker (`sudo systemctl start docker` o Docker Desktop) y comprueba que `docker ps` funciona.                                              |
-| `✖ No se pudo iniciar el contenedor...`                              | El puerto 8080 está ocupado. Usa otro: `DEMO_PORT=8081 make demo name=hero_banner`.                                                                                                                        |
-| `✖ No existe web/modules/custom/<nombre>`                            | `make demo` muestra un componente que ya generaste. Créalo antes con `make component name=<nombre>`.                                                                                                       |
-| `✖ El componente "<nombre>" ya existe`                               | Es la protección contra sobrescritura. Usa otro nombre o borra la carpeta si quieres regenerarlo.                                                                                                          |
-| Tras `make demo-stop` sigues viendo `localhost:8080` en el navegador | El servidor está apagado. Lo que ves es la pestaña que ya estaba abierta, la caché del navegador o el autocompletado del historial. Recarga con Ctrl+Shift+R o ábrela en incógnito: verás que no responde. |
-| La primera ejecución de smoke o demo tarda varios minutos            | Docker descarga la imagen de Drupal (~1 GB) solo la primera vez. Las siguientes ejecuciones son mucho más rápidas.                                                                                         |
+| Síntoma                                                                 | Causa y solución                                                                                                                                                                                           |
+| ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `✖ docker no está instalado`                                            | Instala Docker: https://docs.docker.com/get-docker/                                                                                                                                                        |
+| `✖ Docker está instalado pero no responde`                              | El servicio está apagado o tu usuario no tiene permisos. Inicia Docker (`sudo systemctl start docker` o Docker Desktop) y comprueba que `docker ps` funciona.                                              |
+| `✖ No se pudo iniciar el contenedor...`                                 | El puerto 8080 está ocupado. Usa otro: `DEMO_PORT=8081 make demo name=hero_banner`.                                                                                                                        |
+| `✖ No existe web/modules/custom/<nombre>`                               | `make demo` muestra un componente que ya generaste. Créalo antes con `make component name=<nombre>`.                                                                                                       |
+| `✖ El componente "<nombre>" ya existe`                                  | Es la protección contra sobrescritura. Usa otro nombre o borra la carpeta si quieres regenerarlo.                                                                                                          |
+| Tras `make demo-stop` sigues viendo `localhost:8080` en el navegador    | El servidor está apagado. Lo que ves es la pestaña que ya estaba abierta, la caché del navegador o el autocompletado del historial. Recarga con Ctrl+Shift+R o ábrela en incógnito: verás que no responde. |
+| La primera ejecución de `make phpcs` o `make demo` tarda varios minutos | Docker descarga la imagen de Drupal (~1 GB) solo la primera vez. Las siguientes ejecuciones son mucho más rápidas.                                                                                         |
 
 ## Comandos
 
 | Comando                             | Qué hace                                                  |
 | ----------------------------------- | --------------------------------------------------------- |
 | `make component name=<n> [dir=<r>]` | Genera un componente                                      |
-| `make check`                        | Formato, lint y tests (el mismo gate que CI y pre-commit) |
 | `make phpcs name=<n>`               | Revisa un componente con los estándares Drupal (Docker)   |
-| `make smoke` / `KEEP=1 make smoke`  | Valida un componente generado en Drupal 11 (Docker)       |
 | `make demo name=<n>`                | Levanta tu componente en `http://localhost:8080` (Docker) |
 | `make demo-stop`                    | Apaga y borra la demo                                     |
-| `make help`                         | Lista todos los comandos                                  |
+| `make help`                         | Lista todos los comandos, incluidos los de desarrollo     |
 
 ## Desarrollo
 
-```bash
-npm install   # instala eslint/prettier y activa el hook de pre-commit (.githooks/pre-commit)
-make check    # formato + lint + tests; lo mismo que corren el hook y CI
-```
-
-Las plantillas de los archivos generados están en `tools/scaffold/templates.mjs`. La arquitectura del código y el porqué de cada decisión están en [docs/scaffolding.md](docs/scaffolding.md).
+`make check` y `make smoke` validan **la herramienta**, no tus componentes. Están descritos en [CONTRIBUTING.md](CONTRIBUTING.md).

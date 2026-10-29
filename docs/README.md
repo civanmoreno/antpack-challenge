@@ -14,4 +14,4 @@ Respuesta técnica a un reto para una plataforma web de alto tráfico basada en 
 | [adr/0001-native-node-scaffolder.md](adr/0001-native-node-scaffolder.md) | Decisión: Node nativo en lugar de Plop, Bash o `drush generate`                                |
 | [../examples/drupal-pr-pipeline.yml](../examples/drupal-pr-pipeline.yml) | Pipeline de referencia (GitHub Actions) para el repositorio Drupal                             |
 
-Para instalar y usar el generador, consulta el [README](../README.md).
+Para usar el generador, consulta el [README](../README.md). Para modificarlo (código, tests y CI), [CONTRIBUTING.md](../CONTRIBUTING.md).
