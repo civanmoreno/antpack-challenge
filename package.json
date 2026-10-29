@@ -1,0 +1,28 @@
+{
+  "name": "drupal-component-scaffold",
+  "version": "1.0.0",
+  "description": "Generador de componentes/módulos Drupal desde la terminal, sin dependencias en runtime.",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "scaffold": "./tools/scaffold/cli.mjs"
+  },
+  "scripts": {
+    "scaffold": "node tools/scaffold/cli.mjs",
+    "test": "node --test --experimental-test-coverage --test-coverage-lines=90 --test-coverage-include=\"tools/**\" \"test/**/*.test.mjs\"",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check": "npm run format:check && npm run lint && npm test"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5",
+    "globals": "^17.13.0",
+    "prettier": "^3.9.10"
+  }
+}
