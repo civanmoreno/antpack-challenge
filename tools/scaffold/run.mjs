@@ -50,16 +50,36 @@ export async function run(argv, { cwd = process.cwd(), env = process.env, out, e
 
   try {
     const result = await generateComponent({ name: positionals[0], baseDir });
-    print(`✔ Componente "${result.machineName}" creado en ${path.relative(cwd, result.target)}`);
-    for (const file of result.files) print(`  + ${path.relative(cwd, file)}`);
+    print(`✔ Componente "${result.machineName}" creado en ${displayPath(cwd, result.target)}`);
+    for (const file of result.files) print(`  + ${displayPath(cwd, file)}`);
     print(`\nSiguiente paso: drush en ${result.machineName} -y`);
     return 0;
   } catch (error) {
-    if (error instanceof InvalidNameError || error instanceof TargetExistsError) {
+    if (error instanceof TargetExistsError) {
+      const target = displayPath(cwd, error.target);
+      printError(
+        [
+          `✖ El componente "${path.basename(error.target)}" ya existe en ${target}`,
+          '  No se creó ni modificó ningún archivo.',
+          '',
+          '  Opciones:',
+          '    • Usa otro nombre para el nuevo componente.',
+          `    • Si quieres regenerarlo desde cero, borra antes la carpeta: rm -rf ${target}`,
+        ].join('\n'),
+      );
+      return 1;
+    }
+    if (error instanceof InvalidNameError) {
       printError(`✖ ${error.message}`);
       return 1;
     }
     printError(`✖ Error inesperado al generar el componente: ${error.message}`);
     return 2;
   }
+}
+
+// Relative paths are shorter and copy-pasteable; fall back to absolute outside cwd.
+function displayPath(cwd, target) {
+  const relative = path.relative(cwd, target);
+  return relative.startsWith('..') || path.isAbsolute(relative) ? target : relative;
 }

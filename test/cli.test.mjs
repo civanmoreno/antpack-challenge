@@ -49,7 +49,20 @@ test('fails with a clear message when the folder already exists', async () => {
   await runCaptured(['card']);
   const { code, err } = await runCaptured(['card']);
   assert.equal(code, 1);
-  assert.match(err, /La carpeta destino ya existe/);
+  assert.match(err, /El componente "card" ya existe en web\/modules\/custom\/card\n/);
+  assert.match(err, /No se creó ni modificó ningún archivo/);
+  assert.match(err, /rm -rf web\/modules\/custom\/card$/);
+});
+
+test('shows absolute paths when the target is outside the working directory', async () => {
+  const outside = await mkdtemp(path.join(os.tmpdir(), 'scaffold-outside-'));
+  try {
+    const { code, out } = await runCaptured(['card', '--dir', outside]);
+    assert.equal(code, 0);
+    assert.match(out, new RegExp(`creado en ${path.join(outside, 'card')}`));
+  } finally {
+    await rm(outside, { recursive: true, force: true });
+  }
 });
 
 test('fails with a hint on invalid names', async () => {
@@ -89,7 +102,7 @@ test('real process exits with the right codes', async () => {
 
   await assert.rejects(exec(process.execPath, [CLI, 'card'], { cwd }), (error) => {
     assert.equal(error.code, 1);
-    assert.match(error.stderr, /ya existe/);
+    assert.match(error.stderr, /ya existe en web\/modules\/custom\/card/);
     return true;
   });
 });

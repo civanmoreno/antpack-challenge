@@ -70,7 +70,12 @@ Un solo nombre de entrada deriva todas las variantes de forma consistente (`hero
   La misma regla bloquea rutas como `../algo`.
 - **Nunca sobrescribe:** si la carpeta existe (o hay un archivo con ese nombre), aborta sin tocar nada:
   ```text
-  ✖ La carpeta destino ya existe: /…/web/modules/custom/hero_banner. No se sobrescribió nada.
+  ✖ El componente "hero_banner" ya existe en web/modules/custom/hero_banner
+    No se creó ni modificó ningún archivo.
+
+    Opciones:
+      • Usa otro nombre para el nuevo componente.
+      • Si quieres regenerarlo desde cero, borra antes la carpeta: rm -rf web/modules/custom/hero_banner
   ```
   La comprobación es un `mkdir` no recursivo, que falla de forma atómica: no hay ventana entre "comprobar" y "crear". Los archivos se escriben con el flag `wx` (fallan si ya existen).
 - **Sin resultados a medias:** si falla una escritura (disco lleno, permisos), borra la carpeta que acaba de crear.
