@@ -81,7 +81,7 @@ jobs:
           key: composer-${{ hashFiles('composer.lock') }}
       - run: composer install --no-interaction --no-progress
       - name: Instalar desde la configuración versionada
-        run: vendor/bin/drush site:install --existing-config --db-url=sqlite://sites/default/files/.ht.sqlite -y
+        run: vendor/bin/drush site:install --existing-config --db-url=sqlite://localhost/sites/default/files/.ht.sqlite -y
       - name: La config del repo y la de la BD deben coincidir
         run: |
           vendor/bin/drush updatedb -y

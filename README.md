@@ -91,6 +91,16 @@ make smoke   # genera un componente, lo instala en Drupal 11 (Docker) y comprueb
 - 27 tests con `node:test` (validación, generador, CLI y proceso real) con 100 % de cobertura de ramas y 99,7 % de líneas (umbral en CI: 90 %).
 - `make smoke` levanta `drupal:11-php8.3`, ejecuta `php -l`, `drush site:install`, `drush pm:install <componente>` y renderiza el theme hook comprobando el HTML. Pasa en local.
 - CI (`.github/workflows/ci.yml`) corre ambos en cada PR.
+
+**Validarlo tú mismo en el navegador** (requiere Docker):
+
+```bash
+make component name=hero_banner
+make demo name=hero_banner     # Drupal 11 en http://localhost:8080 con tu componente montado
+```
+
+Abre `http://localhost:8080/scaffold-demo` e inspecciona el bloque (F12): el wrapper tiene la clase `hero-banner--ready`, que añade el JS del componente al ejecutarse, y en la pestaña Network aparecen `css/hero_banner.css` y `js/hero_banner.js`. El puerto se cambia con `DEMO_PORT=8081`. Para apagarlo: `make demo-stop`. La ruta `/scaffold-demo` la crea un módulo auxiliar que existe solo dentro del contenedor de la demo y no forma parte del código generado.
+
 - `npm install` activa un hook de pre-commit (`.githooks/pre-commit`) que corre `npm run check`. Es el mismo gate que CI, en unos 2 segundos.
 - Trazabilidad requerimiento → test en [`docs/requirements.md`](docs/requirements.md).
 

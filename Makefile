@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help install component test lint format check smoke
+.PHONY: help install component test lint format check smoke demo demo-stop
 
 dir ?= web/modules/custom
 
@@ -27,3 +27,10 @@ check: ## Formato + lint + tests (lo mismo que corre CI)
 
 smoke: ## Prueba el componente generado en un Drupal 11 real (requiere Docker)
 	./scripts/smoke-drupal.sh
+
+demo: ## Levanta Drupal en localhost:8080 con tu componente: make demo name=<nombre> (requiere Docker)
+	@if [ -z "$(name)" ]; then echo "✖ Falta el nombre. Uso: make demo name=<nombre>" >&2; exit 1; fi
+	@./scripts/demo-drupal.sh "$(name)" "$(dir)"
+
+demo-stop: ## Apaga y borra el contenedor de la demo
+	@docker rm -f scaffold-demo >/dev/null 2>&1 && echo "✔ Demo detenida" || echo "No había demo corriendo"

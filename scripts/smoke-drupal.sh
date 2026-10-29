@@ -14,7 +14,7 @@ set -euo pipefail
 cd /opt/drupal
 composer require -q drush/drush
 php -l web/modules/custom/$NAME/$NAME.module
-vendor/bin/drush site:install minimal --db-url=sqlite://sites/default/files/.ht.sqlite -y -q
+vendor/bin/drush site:install minimal --db-url=sqlite://localhost/sites/default/files/.ht.sqlite -y -q
 vendor/bin/drush pm:install $NAME -y
 html=\$(vendor/bin/drush php:eval '\$b = [\"#theme\" => \"$NAME\", \"#title\" => \"Smoke\"]; echo \Drupal::service(\"renderer\")->renderInIsolation(\$b);')
 echo \"\$html\"
