@@ -16,6 +16,15 @@ require_docker
 require_command curl "Instálalo con el gestor de paquetes de tu sistema."
 ok "Componente encontrado en $BASE_DIR/$NAME"
 
+port_in_use() { (exec 3<>"/dev/tcp/127.0.0.1/$1") 2>/dev/null; }
+# Check before removing the previous demo, so a busy port never destroys a working one.
+# The port only counts as busy if something other than our own demo holds it.
+current_port="$(docker port "$CONTAINER" 80/tcp 2>/dev/null | head -1 | sed 's/.*://' || true)"
+if port_in_use "$PORT" && [[ "$current_port" != "$PORT" ]]; then
+  fail "El puerto $PORT está ocupado por otro proceso. Usa otro: DEMO_PORT=8081 make demo name=$NAME"
+fi
+ok "Puerto $PORT disponible"
+
 step "[1/3] Iniciando el contenedor $CONTAINER ($IMAGE) en el puerto $PORT"
 # A previous demo is replaced, never stacked.
 docker rm -f "$CONTAINER" >/dev/null 2>&1 || true

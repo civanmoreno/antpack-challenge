@@ -140,7 +140,7 @@ Ejecuta `phpcs --standard=Drupal,DrupalPractice` (de `drupal/coder`) sobre `web/
 | ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `✖ docker no está instalado`                                            | Instala Docker: https://docs.docker.com/get-docker/                                                                                                                                                        |
 | `✖ Docker está instalado pero no responde`                              | El servicio está apagado o tu usuario no tiene permisos. Inicia Docker (`sudo systemctl start docker` o Docker Desktop) y comprueba que `docker ps` funciona.                                              |
-| `✖ No se pudo iniciar el contenedor...`                                 | El puerto 8080 está ocupado. Usa otro: `DEMO_PORT=8081 make demo name=hero_banner`.                                                                                                                        |
+| `✖ El puerto 8080 está ocupado por otro proceso`                        | Otro programa usa ese puerto. Usa otro: `DEMO_PORT=8081 make demo name=hero_banner`. Se comprueba antes de tocar nada, así que una demo que ya estuviera en marcha no se pierde.                           |
 | `✖ No existe web/modules/custom/<nombre>`                               | `make demo` muestra un componente que ya generaste. Créalo antes con `make component name=<nombre>`.                                                                                                       |
 | `✖ El componente "<nombre>" ya existe`                                  | Es la protección contra sobrescritura. Usa otro nombre o borra la carpeta si quieres regenerarlo.                                                                                                          |
 | Tras `make demo-stop` sigues viendo `localhost:8080` en el navegador    | El servidor está apagado. Lo que ves es la pestaña que ya estaba abierta, la caché del navegador o el autocompletado del historial. Recarga con Ctrl+Shift+R o ábrela en incógnito: verás que no responde. |
@@ -153,7 +153,7 @@ Ejecuta `phpcs --standard=Drupal,DrupalPractice` (de `drupal/coder`) sobre `web/
 | `make component name=<n> [dir=<r>]` | Genera un componente                                      |
 | `make phpcs name=<n>`               | Revisa un componente con los estándares Drupal (Docker)   |
 | `make demo name=<n>`                | Levanta tu componente en `http://localhost:8080` (Docker) |
-| `make demo-stop`                    | Apaga y borra la demo                                     |
+| `make demo-stop`                    | Apaga y borra la demo (avisa si no había ninguna)         |
 | `make help`                         | Lista todos los comandos, incluidos los de desarrollo     |
 
 ## Desarrollo
