@@ -1,0 +1,4 @@
+#!/usr/bin/env sh
+# Mismo gate que CI, en local. Tarda ~2 s; saltarlo con --no-verify queda a criterio de cada uno,
+# pero CI lo vuelve a correr igualmente.
+exec npm run -s check

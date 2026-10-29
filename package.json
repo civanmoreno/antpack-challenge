@@ -11,6 +11,7 @@
     "scaffold": "./tools/scaffold/cli.mjs"
   },
   "scripts": {
+    "prepare": "git config core.hooksPath .githooks || true",
     "scaffold": "node tools/scaffold/cli.mjs",
     "test": "node --test --experimental-test-coverage --test-coverage-lines=90 --test-coverage-include=\"tools/**\" \"test/**/*.test.mjs\"",
     "lint": "eslint .",
