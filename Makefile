@@ -32,5 +32,5 @@ demo: ## Levanta Drupal en localhost:8080 con tu componente: make demo name=<nom
 	@if [ -z "$(name)" ]; then echo "✖ Falta el nombre. Uso: make demo name=<nombre>" >&2; exit 1; fi
 	@./scripts/demo-drupal.sh "$(name)" "$(dir)"
 
-demo-stop: ## Apaga y borra el contenedor de la demo
+demo-stop: ## Apaga y borra el contenedor de la demo (y todo lo creado dentro)
 	@docker rm -f scaffold-demo >/dev/null 2>&1 && echo "✔ Demo detenida" || echo "No había demo corriendo"

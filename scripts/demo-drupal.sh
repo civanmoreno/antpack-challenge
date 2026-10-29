@@ -11,13 +11,20 @@ CONTAINER="scaffold-demo"
 MODULE_DIR="$(cd "$BASE_DIR/$NAME" 2>/dev/null && pwd)" \
   || fail "No existe $BASE_DIR/$NAME. Genéralo primero: make component name=$NAME"
 
+step "Requisitos"
 require_docker
+require_command curl "Instálalo con el gestor de paquetes de tu sistema."
+ok "Componente encontrado en $BASE_DIR/$NAME"
 
+step "[1/3] Iniciando el contenedor $CONTAINER ($IMAGE) en el puerto $PORT"
+# A previous demo is replaced, never stacked.
 docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
 docker run -d --name "$CONTAINER" -p "$PORT:80" \
-  -v "$MODULE_DIR:/opt/drupal/web/modules/custom/$NAME:ro" "$IMAGE" >/dev/null
+  -v "$MODULE_DIR:/opt/drupal/web/modules/custom/$NAME:ro" "$IMAGE" >/dev/null \
+  || fail "No se pudo iniciar el contenedor. Si el puerto $PORT está ocupado, usa otro: DEMO_PORT=8081 make demo name=$NAME"
+ok "Contenedor en marcha; tu componente está montado en solo lectura"
 
-echo "Instalando Drupal en el contenedor $CONTAINER (1–2 min la primera vez)..."
+step "[2/3] Instalando Drupal y habilitando $NAME (1–2 min la primera vez)"
 docker exec "$CONTAINER" bash -c "
 set -euo pipefail
 cd /opt/drupal
@@ -66,12 +73,14 @@ vendor/bin/drush config:set system.performance css.preprocess 0 -y -q
 vendor/bin/drush config:set system.performance js.preprocess 0 -y -q
 chown -R www-data:www-data web/sites/default/files
 "
+ok "Drupal instalado con los módulos $NAME y scaffold_demo"
 
+step "[3/3] Comprobando la página de demo"
 URL="http://localhost:$PORT/scaffold-demo"
 CSS_CLASS="${NAME//_/-}"
-html="$(curl -fsS "$URL")"
+html="$(curl -fsS "$URL")" || fail "La página $URL no responde. Revisa los logs: docker logs $CONTAINER"
 expect() {
-  if grep -q "$1" <<<"$html"; then echo "✔ $2"; else echo "✖ Falta: $2" >&2; exit 1; fi
+  if grep -q "$1" <<<"$html"; then ok "$2"; else fail "Falta: $2"; fi
 }
 expect "class=\"$CSS_CLASS\"" "HTML del componente presente"
 expect "css/$NAME.css" "CSS del componente enlazado"
@@ -79,9 +88,13 @@ expect "js/$NAME.js" "JS del componente enlazado"
 
 cat <<MSG
 
-Abre $URL en el navegador e inspecciona el bloque (F12):
-  • <div class="$CSS_CLASS $CSS_CLASS--ready">  → la clase --ready la añade el JS al ejecutarse
-  • En la pestaña Network verás css/$NAME.css y js/$NAME.js
-Admin: http://localhost:$PORT/user/login  (admin / admin)
-Para apagarlo: make demo-stop
+${GREEN}✔ Demo en marcha${RESET}
+  Página:  $URL
+           Inspecciona el bloque (F12): debe tener la clase "$CSS_CLASS--ready", que añade
+           el JS al ejecutarse; en Network verás css/$NAME.css y js/$NAME.js.
+  Admin:   http://localhost:$PORT/user/login  (admin / admin)
+
+  Apagar:  make demo-stop  (borra el contenedor y todo lo creado dentro)
+           Tras apagarla, una pestaña ya abierta puede seguir mostrando la página desde la
+           caché del navegador; al recargar verás que el sitio ya no responde.
 MSG
