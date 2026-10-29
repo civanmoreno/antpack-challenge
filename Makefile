@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help install component test lint format check smoke demo demo-stop
+.PHONY: help install component test lint format check phpcs smoke demo demo-stop
 
 dir ?= web/modules/custom
 
@@ -24,6 +24,10 @@ format: ## Formatea el código con Prettier
 
 check: ## Formato + lint + tests (lo mismo que corre CI)
 	npm run check
+
+phpcs: ## Revisa un componente con los estándares Drupal: make phpcs name=<nombre> (Docker)
+	@if [ -z "$(name)" ]; then echo "✖ Falta el nombre. Uso: make phpcs name=<nombre>" >&2; exit 1; fi
+	@./scripts/phpcs-drupal.sh "$(name)" "$(dir)"
 
 smoke: ## Valida un componente generado en Drupal 11 (Docker). KEEP=1 deja el contenedor vivo
 	./scripts/smoke-drupal.sh

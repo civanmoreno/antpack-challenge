@@ -108,7 +108,7 @@ Por eso, además de los archivos mínimos del reto (`.info.yml`, `.html.twig` y 
 
 ### 4. Cómo validar que funciona
 
-Hay tres niveles. Cada uno comprueba algo que el anterior no cubre.
+Hay cuatro herramientas. Cada una comprueba algo que las anteriores no cubren.
 
 #### a) Tests automáticos: `make check` (segundos, sin Docker)
 
@@ -151,6 +151,26 @@ Después, en el navegador:
 
 **Para apagarla:** `make demo-stop`. Borra el contenedor y todo lo que se creó dentro (el sitio, la base de datos y el módulo auxiliar). Tus archivos en `web/modules/custom` no se tocan. Si vuelves a ejecutar `make demo`, la demo anterior se reemplaza, así que nunca se acumulan contenedores.
 
+#### d) Estándares Drupal en tus componentes: `make phpcs name=<nombre>` (Docker)
+
+`make smoke` aplica `phpcs` solo a su componente temporal. Para revisar un componente tuyo, por ejemplo después de editarlo a mano:
+
+```bash
+make phpcs name=hero_banner
+```
+
+Ejecuta `phpcs --standard=Drupal,DrupalPractice` (de `drupal/coder`) sobre `web/modules/custom/hero_banner`, montado en solo lectura, así que nunca modifica tus archivos. Lista cada archivo revisado y, si hay incumplimientos, muestra el archivo, la línea, el problema y la regla, y termina con código de error. Ejemplo con fallos introducidos a propósito:
+
+```text
+  revisado: hero_banner.module (6 errors, 0 warnings)
+  FILE: web/modules/custom/hero_banner/hero_banner.module
+   25 | ERROR | [x] Missing function doc comment
+   25 | ERROR | [ ] Variable "Title" starts with a capital letter, ...
+   26 | ERROR | [x] Line indented incorrectly; expected 2 spaces, found 4
+   26 | ERROR | [x] Short array syntax must be used to define arrays
+✖ hero_banner no cumple los estándares Drupal: corrige las líneas indicadas arriba y vuelve a ejecutar make phpcs name=hero_banner
+```
+
 ### 5. Solución de problemas
 
 | Síntoma                                                              | Causa y solución                                                                                                                                                                                           |
@@ -169,6 +189,7 @@ Después, en el navegador:
 | ----------------------------------- | --------------------------------------------------------- |
 | `make component name=<n> [dir=<r>]` | Genera un componente                                      |
 | `make check`                        | Formato, lint y tests (el mismo gate que CI y pre-commit) |
+| `make phpcs name=<n>`               | Revisa un componente con los estándares Drupal (Docker)   |
 | `make smoke` / `KEEP=1 make smoke`  | Valida un componente generado en Drupal 11 (Docker)       |
 | `make demo name=<n>`                | Levanta tu componente en `http://localhost:8080` (Docker) |
 | `make demo-stop`                    | Apaga y borra la demo                                     |
@@ -185,6 +206,7 @@ tools/scaffold/
   validate.mjs      # reglas de machine name y sugerencias
 test/               # tests con node:test
 scripts/
+  phpcs-drupal.sh   # make phpcs
   smoke-drupal.sh   # make smoke
   demo-drupal.sh    # make demo
   lib/common.sh     # salida por pasos y verificación de Docker, compartidos
