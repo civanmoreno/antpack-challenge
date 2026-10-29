@@ -85,11 +85,11 @@ Un solo nombre de entrada deriva todas las variantes de forma consistente (`hero
 
 ```bash
 make check   # prettier + eslint + tests con umbral de cobertura del 90 %
-make smoke   # genera un componente, lo instala en Drupal 11 (Docker) y comprueba el HTML renderizado
+make smoke   # genera un componente, pasa phpcs (Drupal) y lo instala y renderiza en Drupal 11 (Docker)
 ```
 
 - 27 tests con `node:test` (validación, generador, CLI y proceso real) con 100 % de cobertura de ramas y 99,7 % de líneas (umbral en CI: 90 %).
-- `make smoke` levanta `drupal:11-php8.3`, ejecuta `php -l`, `drush site:install`, `drush pm:install <componente>` y renderiza el theme hook comprobando el HTML. Pasa en local.
+- `make smoke` levanta `drupal:11-php8.3`, ejecuta `php -l`, `phpcs --standard=Drupal,DrupalPractice` (drupal/coder) sobre el código generado, `drush site:install`, `drush pm:install <componente>` y renderiza el theme hook comprobando el HTML. Pasa en local.
 - CI (`.github/workflows/ci.yml`) corre ambos en cada PR.
 
 **Validarlo tú mismo en el navegador** (requiere Docker):

@@ -16,6 +16,7 @@ Fuente: enunciado del reto técnico.
 
 ## No funcionales
 
+- El código generado cumple los estándares `Drupal` y `DrupalPractice` de `phpcs` (verificado en `make smoke`).
 - Sin dependencias en runtime; Node ≥ 20.
 - Sin resultados a medias si falla la escritura (rollback).
 - Códigos de salida distinguibles: 0 éxito, 1 error de uso, 2 error inesperado.
