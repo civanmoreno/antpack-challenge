@@ -1,0 +1,93 @@
+# Pipeline de referencia para el repositorio Drupal de la plataforma (Bloque 2).
+# Supone: proyecto basado en drupal/recommended-project, config en config/sync,
+# código propio en web/modules/custom y web/themes/custom.
+# Dev deps esperadas: drush/drush, drupal/coder, mglaman/phpstan-drupal,
+# phpstan/phpstan-deprecation-rules, phpunit/phpunit, vincentlanglet/twig-cs-fixer.
+name: PR quality gate
+
+on:
+  pull_request:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  CUSTOM_CODE: web/modules/custom web/themes/custom
+
+jobs:
+  # 1. Rápido (< 2 min): falla temprano en lo barato.
+  static:
+    name: Estándares y análisis estático
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: composer:v2
+      - uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.lock') }}
+      - run: composer validate --strict
+      - run: composer install --no-interaction --no-progress
+      - name: Coding standards (Drupal + DrupalPractice)
+        run: vendor/bin/phpcs --standard=Drupal,DrupalPractice --extensions=php,module,inc,install,theme,yml $CUSTOM_CODE
+      - name: PHPStan (incluye APIs deprecadas)
+        run: vendor/bin/phpstan analyse $CUSTOM_CODE --level=5 --no-progress
+      - name: Sintaxis de Twig y YAML
+        run: |
+          vendor/bin/twig-cs-fixer lint $CUSTOM_CODE
+          vendor/bin/yaml-lint config/sync $CUSTOM_CODE
+      - name: Vulnerabilidades conocidas
+        run: composer audit --locked
+
+  frontend:
+    name: Lint de frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npx eslint web/modules/custom web/themes/custom
+      - run: npx stylelint "web/{modules,themes}/custom/**/*.css"
+
+  # 2. Integridad: la config versionada debe poder levantar un sitio desde cero.
+  config-and-tests:
+    name: Integridad de configuración y tests
+    runs-on: ubuntu-latest
+    needs: static
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pdo_sqlite, gd
+          tools: composer:v2
+      - uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.lock') }}
+      - run: composer install --no-interaction --no-progress
+      - name: Instalar desde la configuración versionada
+        run: vendor/bin/drush site:install --existing-config --db-url=sqlite://sites/default/files/.ht.sqlite -y
+      - name: La config del repo y la de la BD deben coincidir
+        run: |
+          vendor/bin/drush updatedb -y
+          vendor/bin/drush config:import -y
+          # Re-exportar no debe cambiar nada: si cambia, hay config que no viaja completa en Git.
+          vendor/bin/drush config:export -y
+          git diff --exit-code -- config/sync || { echo "::error::Config drift detectado"; exit 1; }
+      - name: Tests unitarios y de kernel del código propio
+        run: vendor/bin/phpunit -c web/core --testsuite=unit,kernel web/modules/custom
