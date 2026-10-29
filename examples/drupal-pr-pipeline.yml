@@ -90,4 +90,9 @@ jobs:
           vendor/bin/drush config:export -y
           git diff --exit-code -- config/sync || { echo "::error::Config drift detectado"; exit 1; }
       - name: Tests unitarios y de kernel del código propio
-        run: vendor/bin/phpunit -c web/core --testsuite=unit,kernel web/modules/custom
+        env:
+          SIMPLETEST_DB: sqlite://localhost//tmp/test.sqlite
+        # Solo los directorios del código propio: pasar --testsuite correría toda la suite de core.
+        run: |
+          find web/modules/custom -type d \( -path '*/tests/src/Unit' -o -path '*/tests/src/Kernel' \) -print0 \
+            | xargs -0 -r -n1 vendor/bin/phpunit -c web/core

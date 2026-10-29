@@ -4,8 +4,8 @@
 const MACHINE_NAME_PATTERN = /^[a-z][a-z0-9_]*$/;
 export const MAX_NAME_LENGTH = 50;
 
-// Names that clash with core extensions, PHP reserved words or Drupal internals.
-// A collision here breaks the site at install time, so we fail early.
+// Common clashes with core modules and PHP reserved words. Not exhaustive: a clash
+// with any installed extension breaks the site, so this only catches the usual ones.
 const RESERVED_NAMES = new Set([
   'block',
   'core',
