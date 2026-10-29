@@ -1,17 +1,10 @@
-# Reto técnico: scaffolding y gobernanza de configuración (Drupal)
+# Drupal Component Scaffold
 
-Respuesta a los bloques técnicos del reto:
+Generador de línea de comandos que crea un componente Drupal completo (módulo, plantilla Twig, CSS, JS y librería) con un solo comando, con nombres consistentes y sin sobrescribir nunca código existente.
 
-1. [Automatización de scaffolding](#bloque-1--automatización-ligera-de-scaffolding): código funcional, con tests, validado con `phpcs` (estándares Drupal) y probado en un Drupal 11 real.
-2. [Estrategia de calidad y ciclo de configuración](#bloque-2--estrategia-de-calidad-y-ciclo-de-configuración).
+> Este README explica **cómo usarlo**. El diseño, las decisiones y la estrategia de configuración y CI están en la [documentación del proyecto](docs/README.md).
 
----
-
-## Bloque 1 · Automatización ligera de scaffolding
-
-Un generador de línea de comandos que crea un componente Drupal completo con un solo comando. Está escrito en Node.js **sin dependencias en runtime** (solo `fs`, `path` y `util.parseArgs`), así que basta con tener Node instalado.
-
-### En 30 segundos
+## Inicio rápido
 
 ```bash
 npm install                        # una sola vez: instala eslint/prettier y activa el hook de pre-commit
@@ -20,7 +13,7 @@ make demo name=hero_banner         # opcional: lo ves funcionando en un Drupal r
 make demo-stop                     # apaga la demo
 ```
 
-### Requisitos
+## Requisitos
 
 | Herramienta  | Para qué                                        | Obligatoria                              |
 | ------------ | ----------------------------------------------- | ---------------------------------------- |
@@ -31,7 +24,7 @@ make demo-stop                     # apaga la demo
 
 Los scripts que usan Docker comprueban primero que esté instalado y que el servicio responda. Si no, se detienen con un mensaje que dice qué hacer.
 
-### 1. Generar un componente
+## Generar un componente
 
 ```bash
 make component name=hero_banner
@@ -64,7 +57,7 @@ npm run scaffold -- --help
 
 En un proyecto Drupal real, el siguiente paso es habilitar el módulo (`drush en hero_banner -y`) y usarlo en cualquier render array con `['#theme' => 'hero_banner', '#title' => '...', '#content' => '...']`.
 
-### 2. Qué genera y cómo funciona dentro de Drupal
+### Qué obtienes
 
 | Archivo                        | Qué hace                                                                                                                                                                                     |
 | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -75,24 +68,15 @@ En un proyecto Drupal real, el siguiente paso es habilitar el módulo (`drush en
 | `css/<nombre>.css`             | Estilos base.                                                                                                                                                                                |
 | `js/<nombre>.js`               | Un `Drupal.behavior` con `once()`: se ejecuta una sola vez por elemento, aunque la página recargue partes por AJAX. Añade la clase `--ready`, que sirve para comprobar que el JS se ejecutó. |
 
-Cuando Drupal renderiza `['#theme' => 'hero_banner']`, la cadena es la siguiente:
+## Errores comunes del generador
 
-```text
-hook_theme (.module) → plantilla Twig → attach_library() → .libraries.yml → carga css/ y js/
-```
+El generador aborta, sin crear nada, con un mensaje que explica qué hacer:
 
-Por eso, además de los archivos mínimos del reto (`.info.yml`, `.html.twig` y CSS/JS), se generan `.module` y `.libraries.yml`: sin ellos la plantilla no se usa y el CSS y el JS no se cargan. Las subcarpetas `templates/`, `css/` y `js/` siguen la convención de Drupal.
-
-**Consistencia de nombres:** el único dato de entrada es el nombre, y de él se derivan todas las variantes: `hero_banner` → `Hero Banner` (etiqueta), `hero-banner` (clase CSS), `heroBanner` (behavior JS). Así desaparecen los errores de tipeo entre archivos, que es el problema que planteaba el reto.
-
-### 3. Controles de robustez
-
-- **Nombre válido.** Tiene que ser un _machine name_ de Drupal: minúsculas, números y `_`, empezando por letra, con un máximo de 50 caracteres y sin nombres reservados (`node`, `system`, `class`...). Si no lo es, el generador aborta y sugiere la corrección:
+- **Nombre inválido.** Debe ser un _machine name_ de Drupal: minúsculas, números y `_`, empezando por letra, con un máximo de 50 caracteres y sin nombres reservados (`node`, `system`...).
   ```text
   ✖ El nombre "Hero-Banner" no es un machine name válido: usa minúsculas, números y guion bajo, empezando por letra. ¿Quisiste decir "hero_banner"?
   ```
-  La misma regla impide escribir fuera de la carpeta destino (por ejemplo, con `../algo`).
-- **Nunca sobrescribe.** Si la carpeta ya existe, aborta sin tocar nada:
+- **El componente ya existe.** Nunca se sobrescribe:
   ```text
   ✖ El componente "hero_banner" ya existe en web/modules/custom/hero_banner
     No se creó ni modificó ningún archivo.
@@ -101,19 +85,18 @@ Por eso, además de los archivos mínimos del reto (`.info.yml`, `.html.twig` y 
       • Usa otro nombre para el nuevo componente.
       • Si quieres regenerarlo desde cero, borra antes la carpeta: rm -rf web/modules/custom/hero_banner
   ```
-  La comprobación y la creación son una sola operación atómica (un `mkdir` no recursivo), así que no hay ventana entre "comprobar" y "crear". Además, cada archivo se escribe con el flag `wx`, que falla si el archivo ya existe.
-- **Sin resultados a medias.** Si una escritura falla (disco lleno, permisos), se borra la carpeta recién creada.
-- **Códigos de salida.** `0` éxito, `1` error de uso (nombre inválido, carpeta existente, argumentos), `2` error inesperado de E/S. Con `make`, un error se ve seguido de `make: *** [...] Error 1`: esa línea la añade `make` y es normal.
 
-### 4. Cómo validar que funciona
+Códigos de salida: `0` éxito, `1` error de uso, `2` error inesperado de E/S. Con `make`, después del mensaje aparece `make: *** [...] Error 1`: esa línea la añade `make` y es normal.
+
+## Validar que funciona
 
 Hay cuatro herramientas. Cada una comprueba algo que las anteriores no cubren.
 
-#### a) Tests automáticos: `make check` (segundos, sin Docker)
+### a) Tests automáticos: `make check` (segundos, sin Docker)
 
 Corre Prettier, ESLint y 27 tests con `node:test`, con un umbral de cobertura del 90 % (la cobertura real es del 99,7 % de líneas y el 100 % de ramas). Los tests cubren la validación de nombres, el contenido de cada archivo, la protección contra sobrescritura, el rollback ante fallos de escritura y el CLI como proceso real. Es lo mismo que corren CI y el hook de pre-commit.
 
-#### b) Smoke test en Drupal: `make smoke` (~20 s, Docker)
+### b) Smoke test en Drupal: `make smoke` (~20 s, Docker)
 
 Responde a la pregunta: ¿lo que genera la herramienta funciona en un Drupal real? Es automático y no interactivo, porque CI también lo ejecuta. Muestra cada paso:
 
@@ -128,7 +111,7 @@ Responde a la pregunta: ¿lo que genera la herramienta funciona en un Drupal rea
 
 Al terminar, el contenedor y la carpeta temporal se borran. Si quieres inspeccionarlo, ejecuta `KEEP=1 make smoke`: el contenedor queda en marcha y el script te dice cómo entrar (`docker exec -it ... bash`) y cómo borrarlo.
 
-#### c) Demo en el navegador: `make demo name=<nombre>` (1–2 min, Docker)
+### c) Demo en el navegador: `make demo name=<nombre>` (1–2 min, Docker)
 
 Sirve para verlo con tus propios ojos, con **tu** componente: el que generaste en `web/modules/custom/<nombre>`.
 
@@ -150,7 +133,7 @@ Después, en el navegador:
 
 **Para apagarla:** `make demo-stop`. Borra el contenedor y todo lo que se creó dentro (el sitio, la base de datos y el módulo auxiliar). Tus archivos en `web/modules/custom` no se tocan. Si vuelves a ejecutar `make demo`, la demo anterior se reemplaza, así que nunca se acumulan contenedores.
 
-#### d) Estándares Drupal en tus componentes: `make phpcs name=<nombre>` (Docker)
+### d) Estándares Drupal en tus componentes: `make phpcs name=<nombre>` (Docker)
 
 `make smoke` aplica `phpcs` solo a su componente temporal. Para revisar un componente tuyo, por ejemplo después de editarlo a mano:
 
@@ -170,7 +153,7 @@ Ejecuta `phpcs --standard=Drupal,DrupalPractice` (de `drupal/coder`) sobre `web/
 ✖ hero_banner no cumple los estándares Drupal: corrige las líneas indicadas arriba y vuelve a ejecutar make phpcs name=hero_banner
 ```
 
-### 5. Solución de problemas
+## Solución de problemas
 
 | Síntoma                                                              | Causa y solución                                                                                                                                                                                           |
 | -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -182,7 +165,7 @@ Ejecuta `phpcs --standard=Drupal,DrupalPractice` (de `drupal/coder`) sobre `web/
 | Tras `make demo-stop` sigues viendo `localhost:8080` en el navegador | El servidor está apagado. Lo que ves es la pestaña que ya estaba abierta, la caché del navegador o el autocompletado del historial. Recarga con Ctrl+Shift+R o ábrela en incógnito: verás que no responde. |
 | La primera ejecución de smoke o demo tarda varios minutos            | Docker descarga la imagen de Drupal (~1 GB) solo la primera vez. Las siguientes ejecuciones son mucho más rápidas.                                                                                         |
 
-### 6. Referencia de comandos
+## Comandos
 
 | Comando                             | Qué hace                                                  |
 | ----------------------------------- | --------------------------------------------------------- |
@@ -194,80 +177,11 @@ Ejecuta `phpcs --standard=Drupal,DrupalPractice` (de `drupal/coder`) sobre `web/
 | `make demo-stop`                    | Apaga y borra la demo                                     |
 | `make help`                         | Lista todos los comandos                                  |
 
-### 7. Arquitectura y estructura
+## Desarrollo
 
-```text
-tools/scaffold/
-  cli.mjs           # entrypoint: llama a run() y fija el código de salida
-  run.mjs           # argumentos, mensajes al usuario y códigos de salida
-  generator.mjs     # creación atómica, sin sobrescribir, con rollback
-  templates.mjs     # contenido de cada archivo generado (único lugar a tocar para cambiar plantillas)
-  validate.mjs      # reglas de machine name y sugerencias
-test/               # tests con node:test
-scripts/
-  phpcs-drupal.sh   # make phpcs
-  smoke-drupal.sh   # make smoke
-  demo-drupal.sh    # make demo
-  lib/common.sh     # salida por pasos y verificación de Docker, compartidos
-.githooks/pre-commit              # corre make check antes de cada commit
-.github/workflows/ci.yml          # CI de este repo: check + smoke en cada PR
-examples/drupal-pr-pipeline.yml   # pipeline de referencia para el repo Drupal (Bloque 2)
-docs/                             # requerimientos con trazabilidad y ADR
+```bash
+npm install   # instala eslint/prettier y activa el hook de pre-commit (.githooks/pre-commit)
+make check    # formato + lint + tests; lo mismo que corren el hook y CI
 ```
 
-**Decisión principal:** Node nativo en lugar de Plop o Yeoman. Plop daría prompts interactivos y plantillas Handlebars, pero añade una dependencia y otra sintaxis que el equipo tendría que mantener. Con template literals, el generador cabe en unas 300 líneas, se testea casi por completo y corre en cualquier máquina con Node. Si el catálogo de plantillas crece (variantes por tipo de componente, SDC, bloques), migrar a Plop es barato porque `templates.mjs` ya está aislado. Detalle en [ADR 0001](docs/adr/0001-native-node-scaffolder.md). Trazabilidad de requerimientos a tests en [`docs/requirements.md`](docs/requirements.md).
-
----
-
-## Bloque 2 · Estrategia de calidad y ciclo de configuración
-
-### Gobernanza de configuración: "Git es la fuente de verdad, la BD es un derivado"
-
-**Flujo:**
-
-```text
-local: cambio en la UI → drush cex → commit (config/sync + código) → PR
-                                                                   │
-  CI: site:install --existing-config + cim + cex sin diff ◄────────┘
-                                                                   │
-  deploy (todos los entornos): composer install → drush deploy ◄───┘
-           (updb → cim → cr → deploy hooks, siempre en ese orden)
-```
-
-1. **Un único directorio de configuración** (`config/sync`) versionado. Se instala desde ahí (`drush si --existing-config`), así que cualquier entorno se puede reconstruir desde Git.
-2. **El deploy siempre importa** con `drush deploy`. Lo que alguien cambie a mano en un entorno se **sobrescribe** en el siguiente despliegue. Esto convierte el problema actual (cambios manuales que pisan el código) en lo contrario: el código pisa los cambios manuales, de forma predecible.
-3. **Diferencias por entorno con `config_split`** (p. ej. `devel` y logs detallados solo en dev, caché agresiva en prod) y **secretos y valores de infraestructura en `settings.php` vía variables de entorno**, nunca en el YAML exportado.
-4. **Configuración que de verdad edita el negocio** (textos de banners, menús, ajustes de campaña) se excluye con `config_ignore` o se modela como **contenido**, no como config. Es la decisión clave: si no se separa, el equipo de contenido y el pipeline se pelean por siempre.
-5. **Candados en entornos compartidos:**
-   - `config_readonly` en stage y prod: la UI administrativa no deja guardar formularios de configuración. El cambio "se hace en local y se sube por PR".
-   - Detección de drift: un job programado (o un paso previo al deploy) corre `drush config:status`; si hay diferencias, alerta al canal del equipo **antes** de que el deploy las borre en silencio.
-6. **Cambios estructurales** (borrar campos, migrar datos) van en `hook_update_N` / `hook_deploy_NAME`, nunca a mano en la BD, para que sean repetibles en cada entorno.
-
-### Pipeline de calidad en cada PR
-
-El criterio: **pocos checks, rápidos, en paralelo y bloqueantes**. Un check lento o ruidoso acaba ignorado. Pipeline de referencia completo en [`examples/drupal-pr-pipeline.yml`](examples/drupal-pr-pipeline.yml).
-
-| Etapa                  | Check                                                                                          | Qué evita                                                       | Tiempo aprox. |
-| ---------------------- | ---------------------------------------------------------------------------------------------- | --------------------------------------------------------------- | ------------- |
-| Estática (en paralelo) | `composer validate --strict` + `composer audit`                                                | Lock desincronizado, dependencias con CVEs                      | < 1 min       |
-|                        | `phpcs --standard=Drupal,DrupalPractice` sobre código propio                                   | Desorden de estilo, malas prácticas de Drupal                   | < 1 min       |
-|                        | `phpstan` + `phpstan-drupal` + reglas de deprecaciones                                         | Errores de tipo, llamadas a APIs deprecadas (bloquean upgrades) | 1–2 min       |
-|                        | Lint de Twig y YAML; ESLint/Stylelint en el frontend                                           | Plantillas o YAML rotos que solo fallan en runtime              | < 1 min       |
-| Integridad             | `site:install --existing-config` → `updb` → `cim` → `cex` + `git diff --exit-code config/sync` | Config incompleta en Git, dependencias de config faltantes      | 3–5 min       |
-|                        | PHPUnit (unit + kernel) del código propio                                                      | Regresiones de lógica                                           | 2–5 min       |
-
-**Reglas de la rama principal:** branch protection con los checks anteriores como _required_, al menos 1 aprobación de code review, rama al día con `main` y sin push directo.
-
-**Para no ralentizar al equipo:**
-
-- Los mismos checks corren en local con un comando (`make check`) y los rápidos en un hook de pre-commit, solo sobre archivos modificados. El CI confirma, no sorprende.
-- Caché de `vendor/` y `node_modules`, `concurrency` que cancela ejecuciones obsoletas y jobs en paralelo. Objetivo: **< 10 minutos** de feedback.
-- **Fuera del gate de PR** (nightly o pre-release): E2E con Playwright, regresión visual, Lighthouse/accesibilidad y tests funcionales completos. Son valiosos, pero demasiado lentos o inestables para bloquear cada merge.
-- Para linters en código legado: aplicar solo a archivos nuevos o modificados (o con un _baseline_ de PHPStan) y subir el nivel de forma gradual, para no bloquear al equipo con miles de errores históricos el primer día.
-
----
-
-## Supuestos y límites
-
-- El reto pide `<nombre>.info.yml` con `type`; se generó un **módulo** (`type: module`) porque es el contenedor que permite `hook_theme` y librerías propias. Si el equipo usa _Single Directory Components_, el cambio se limita a `templates.mjs` (`<nombre>.component.yml` + `<nombre>.twig`).
-- El pipeline de `examples/` es una referencia para el repositorio Drupal de la plataforma: no se ejecutó aquí porque este repo no contiene un sitio Drupal. El CI propio de este repo (`ci.yml`) se verificó ejecutando sus mismos comandos en local.
+Las plantillas de los archivos generados están en `tools/scaffold/templates.mjs`. La arquitectura del código y el porqué de cada decisión están en [docs/scaffolding.md](docs/scaffolding.md).
